@@ -1,26 +1,26 @@
-/* Regex-pattern to check URLs against. 
-   It matches URLs like: http[s]://[...]stackoverflow.com[...] */
-   var urlRegex = /^file:\/\/\/:?/
+// Regex to match specific URLs, here it matches "file://" URLs
+var urlRegex = /^file:\/\/\/:?/
 
-   /* A function creator for callbacks */
-   function doStuffWithDOM(element) {
-     alert('I received the following DOM content:\n' + element)
-   }
-   
-   /* When the browser-action button is clicked... */
-   chrome.browserAction.onClicked.addListener(function (tab) {
-     /*...check the URL of the active tab against our pattern and... */
-     if (urlRegex.test(tab.url)) {
-       /* ...if it matches, send a message specifying a callback too */
-       chrome.tabs.sendMessage(tab.id, { text: 'report_back' }, doStuffWithDOM)
-     }
-   })
-   
-   chrome.runtime.onmessage.addListener(function (request, sender, sendResponse) {
-     console.log(
-       sender.tab
-         ? 'from a content script:' + sender.tab.url
-         : 'from the extension'
-     )
-     if (request.greeting === 'hello') sendResponse({ farewell: 'goodbye' })
-   })
+// Callback function to handle DOM content
+function doStuffWithDOM(element) {
+  alert('I received the following DOM content:\n' + element);
+}
+
+// Listens for clicks on the extension's icon
+chrome.action.onClicked.addListener(function (tab) {
+  // Check the active tab's URL against the regex pattern
+  if (urlRegex.test(tab.url)) {
+    // If it matches, send a message to the content script
+    chrome.tabs.sendMessage(tab.id, { text: 'report_back' }, function(response) {
+      doStuffWithDOM(response);
+    });
+  }
+});
+
+// Listen for messages from content scripts or other parts of the extension
+chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
+  console.log(
+    sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension'
+  );
+  if (request.greeting === 'hello') sendResponse({ farewell: 'goodbye' });
+});
